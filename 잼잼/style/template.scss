@@ -1,0 +1,399 @@
+/* stylelint-disable no-descending-specificity */
+/* stylelint-disable no-duplicate-selectors */
+
+// todo
+// make placeholder for font
+// make it compact
+
+@use 'sass:string';
+@import 'customizations';
+@import 'globalFunctions';
+
+@mixin applyBreakpoint(
+  $sectionSideW,
+  $sectionCenterW,
+  $containerPaddingX,
+  $gridColumnNum,
+  $gridGapX,
+  $gridGapY
+) {
+  $paddingMultiplier: 1.5;
+  .container {
+    padding-inline: $containerPaddingX;
+    padding-bottom: $yGapSolivingPadding;
+  }
+  .section {
+    grid-template-columns: $sectionSideW $sectionCenterW $sectionSideW;
+    &:last-of-type > .container {
+      padding-bottom: 0;
+    }
+    &--type-text {
+      > .container {
+        row-gap: $gridGapY;
+        column-gap: $gridGapX;
+        padding-top: $paddingMultiplier * $gridGapY;
+        padding-bottom: $paddingMultiplier * $gridGapY + $yGapSolivingPadding;
+      }
+      &.text-head {
+        > .container {
+          padding-top: 2 * $paddingMultiplier * $gridGapY;
+        }
+      }
+      &.text-tail {
+        > .container {
+          padding-bottom: 2 * $paddingMultiplier * $gridGapY +
+            $yGapSolivingPadding;
+        }
+      }
+    }
+  }
+  %apply-padding-x {
+    padding-inline: $containerPaddingX;
+  }
+  %apply-padding-t {
+    padding-top: $paddingMultiplier * $gridGapY;
+  }
+  %apply-padding-t-double {
+    padding-top: 2 * $paddingMultiplier * $gridGapY;
+  }
+  %apply-padding-t-triple {
+    padding-top: 3 * $paddingMultiplier * $gridGapY;
+  }
+  %apply-padding-b {
+    padding-bottom: $paddingMultiplier * $gridGapY;
+  }
+  %apply-padding-b-double {
+    padding-bottom: 2 * $paddingMultiplier * $gridGapY;
+  }
+  %apply-padding-b-triple {
+    padding-bottom: 3 * $paddingMultiplier * $gridGapY;
+  }
+  %apply-padding-y {
+    padding-block: $paddingMultiplier * $gridGapY;
+  }
+  %apply-padding-y-double {
+    padding-block: 2 * $paddingMultiplier * $gridGapY;
+  }
+  %apply-padding-y-triple {
+    padding-block: 3 * $paddingMultiplier * $gridGapY;
+  }
+  %apply-gap-x {
+    column-gap: $gridGapX;
+  }
+  %apply-gap-y {
+    row-gap: $gridGapY;
+  }
+}
+
+@mixin createTextClasses($fontPrefix) {
+  @for $hierarchy from 1 through 3 {
+    $key: #{$fontPrefix} + '-body-' + #{$hierarchy};
+    .font-body-#{$hierarchy},
+    %font-body-#{$hierarchy} {
+      @include getFontPropertiesFromStyle($key);
+    }
+    $key: #{$fontPrefix} + '-body-' + #{$hierarchy} + '-dense';
+    .font-body-#{$hierarchy}-dense,
+    %font-body-#{$hierarchy}-dense {
+      @include getFontPropertiesFromStyle($key);
+    }
+  }
+  @for $hierarchy from 1 through 6 {
+    $key: #{$fontPrefix} + '-heading-' + #{$hierarchy};
+    .font-heading-#{$hierarchy},
+    %font-heading-#{$hierarchy} {
+      @include getFontPropertiesFromStyle($key);
+    }
+  }
+}
+
+body {
+  background-color: getColorByToken('bg-dark');
+}
+
+.container {
+  z-index: 2;
+  display: flex;
+  flex-flow: column nowrap;
+  grid-row: 1 #{'/'} span 2;
+  grid-column: 2 #{'/'} span 1;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  > * {
+    overflow: hidden;
+  }
+}
+
+.section {
+  display: grid;
+  grid-template-rows: minmax(0, auto) $yGapSolivingPadding;
+  &:not(:first-of-type) {
+    margin-top: -1 * $yGapSolivingPadding;
+  }
+  &:last-of-type {
+    grid-template-rows: minmax(0, auto);
+    > .container {
+      grid-row: 1 #{'/'} span 1;
+    }
+    > .section__bg {
+      grid-row: 1 #{'/'} span 1;
+    }
+  }
+  &--type {
+    &-text,
+    &-media {
+      background-color: #fff;
+    }
+    &-text {
+      color: getColorByToken('onSurface-light');
+      // background-color: getColorByToken('bg-light');
+      a {
+        color: getColorByToken('color-light', 'primary');
+        text-decoration: underline;
+        text-underline-position: under;
+        &:hover {
+          color: getColorByToken('onSurface-variant-light');
+        }
+      }
+      > .container > * {
+        width: 100%;
+        max-width: 70ch;
+        &.text {
+          // &--boxAlign {
+          //   &-left {
+          //     align-self: flex-start;
+          //   }
+          //   &-right {
+          //     align-self: flex-end;
+          //   }
+          // }
+          &--textAlign {
+            &-center {
+              text-align: center;
+            }
+            &-right {
+              text-align: right;
+            }
+          }
+        }
+      }
+    }
+    &-media {
+      > .container {
+        align-items: stretch;
+        padding-inline: 0;
+        * {
+          flex-shrink: 0;
+        }
+        lottie-player {
+          align-self: center;
+          height: auto;
+        }
+      }
+      // &.section:nth-last-of-type(2) > .container {
+      //   padding-bottom: 0;
+      // }
+    }
+    &-header,
+    &-footer {
+      > .container {
+        align-items: stretch;
+        padding-inline: 0;
+      }
+    }
+    &-header {
+      background-color: getColorByToken('bg-dark');
+      > .container {
+        @extend %apply-padding-x;
+        @extend %apply-padding-t-triple;
+        @extend %apply-padding-b-double;
+        color: getColorByToken('onSurface-dark');
+        .profile {
+          @extend %font-body-1-dense;
+          &__title {
+            font-weight: 700;
+          }
+        }
+      }
+    }
+    &-footer {
+      > .container {
+        .designInfo {
+          @extend %font-heading-6;
+          @extend %apply-padding-x;
+          @extend %apply-padding-y-double;
+          @include al($align: 5);
+          color: getColorByToken('onSurface-dark');
+          text-align: center;
+          background-color: getColorByToken('surface-1-dark');
+        }
+        .designerInfo {
+          @extend %apply-padding-x;
+          @extend %apply-padding-t-triple;
+          @extend %apply-padding-b-double;
+          color: getColorByToken('onSurface-dark');
+          background-color: getColorByToken('surface-3-dark');
+          .profile {
+            @extend %font-body-1-dense;
+            @extend %apply-padding-b;
+            &__name {
+              font-weight: 700;
+            }
+          }
+          .otherWorks {
+            @extend %apply-gap-x;
+            @extend %apply-gap-y;
+          }
+        }
+      }
+      // .section--type-media + & > .container {
+      //   padding-top: 0;
+      // }
+    }
+  }
+  &__bg {
+    z-index: 1;
+    &--left {
+      grid-row: 1 #{'/'} span 2;
+      grid-column: 1 #{'/'} span 1;
+      background-color: getColorByToken('bg-dark');
+    }
+    &--right {
+      grid-row: 1 #{'/'} span 2;
+      grid-column: 3 #{'/'} span 1;
+      background-color: getColorByToken('bg-dark');
+    }
+  }
+}
+
+.profile {
+  @include al($align: 4, $gap: 0.75em);
+  &__pic {
+    flex-shrink: 0;
+    width: 3em;
+    aspect-ratio: 1 #{'/'} 1;
+    background-color: getColorByToken('color-dark', 'primary');
+    border-radius: 9999rem;
+  }
+  &__wrap {
+    @include al($isDirX: false, $align: 1, $gap: 4px);
+  }
+  &__title {
+    @extend %font-body-1-dense;
+  }
+  &__name {
+    @extend %font-body-2-dense;
+  }
+  &__quote {
+    @extend %font-body-3-dense;
+  }
+}
+
+.work {
+  @extend %font-body-3;
+  @include al($isDirX: false, $align: 8);
+  aspect-ratio: 16 #{'/'} 9;
+  color: getColorByToken('onSurface-dark');
+  background-color: getColorByToken('surface-5-dark');
+  &:hover {
+    .work__wrap {
+      opacity: 1;
+    }
+  }
+  &__wrap {
+    @include al($isDirX: false, $align: 7, $gap: 2px);
+    align-self: stretch;
+    height: calc((6 * 1.2) * 1em + 2em + 2px);
+    padding: 1em 1.25em;
+    background: linear-gradient(rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.6) 81%);
+    opacity: 0;
+    transition: opacity 100ms;
+    > * {
+      align-self: stretch;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  &__title {
+    font-weight: 700;
+  }
+}
+
+@include eq('hnd') {
+  @include applyBreakpoint(0, 100%, 1.5rem, 4, 1rem, 1rem);
+}
+
+@include eq('tblSm') {
+  @include applyBreakpoint(0, 100%, 1.5rem, 12, 1rem, 1rem);
+}
+
+@include eq('tblLg') {
+  @include applyBreakpoint(1fr, 52.5rem, 2.25rem, 12, 1.5rem, 1.5rem);
+}
+
+@include eq('lpt') {
+  @include applyBreakpoint(
+    0,
+    100%,
+    min(calc(60 / 1440 * 100%), 3.75rem),
+    12,
+    1.5rem,
+    1.5rem
+  );
+}
+
+@include eq('dsk') {
+  @include applyBreakpoint(
+    1fr,
+    minmax(0, 90rem),
+    calc(60 / 1440 * 100%),
+    12,
+    1.5rem,
+    1.5rem
+  );
+}
+
+@include eq('max') {
+  @include applyBreakpoint(1fr, 90rem, 3.75rem, 12, 1.5rem, 1.5rem);
+}
+
+@include ge('hnd') {
+  @include createTextClasses('sm');
+  .container {
+    @include getFontPropertiesFromStyle('sm-body-2');
+  }
+  .otherWorks {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+// @include ge('tblSm') {
+//   .otherWorks {
+//     display: grid;
+//     grid-template-rows: minmax(0, 1fr);
+//     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+//   }
+// }
+
+@include ge('tblLg') {
+  @include createTextClasses('md');
+  .container {
+    @include getFontPropertiesFromStyle('md-body-2');
+  }
+}
+
+@include ge('lpt') {
+  @include createTextClasses('lg');
+  .container {
+    @include getFontPropertiesFromStyle('lg-body-2');
+  }
+  .otherWorks {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}

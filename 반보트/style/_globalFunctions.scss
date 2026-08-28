@@ -1,0 +1,282 @@
+@use 'sass:color';
+@use 'sass:list';
+@use 'sass:map';
+@use 'sass:math';
+@import 'customizations';
+
+@mixin getFontPropertiesFromStyle($styleName) {
+  $prop-value: map.get($fontStyles, $styleName);
+  @each $prop, $value in $prop-value {
+    #{$prop}: #{$value};
+  }
+}
+
+@function getColorFromPalettes($paletteName, $colorNumber) {
+  $number-value: map.get($colorPalettes, $paletteName);
+  $color: map.get($number-value, $colorNumber);
+  @return $color;
+}
+
+@function blendWithTransparent($bg, $fg) {
+  $aFg: opacity($fg);
+  $aBg: opacity($bg);
+  $a: $aFg + $aBg * (1 - $aFg);
+  // $factor: $aBg * (1 - $aFg);
+  $r: math.round(
+    calc(
+      (color.red($fg) * $aFg + color.red($bg) * $aBg * (1 - $aFg)) /
+        ($aFg + $aBg * (1 - $aFg))
+    )
+  );
+  $g: math.round(
+    calc(
+      (color.green($fg) * $aFg + color.green($bg) * $aBg * (1 - $aFg)) /
+        ($aFg + $aBg * (1 - $aFg))
+    )
+  );
+  $b: math.round(
+    calc(
+      (color.blue($fg) * $aFg + color.blue($bg) * $aBg * (1 - $aFg)) /
+        ($aFg + $aBg * (1 - $aFg))
+    )
+  );
+  @return rgba($r, $g, $b, $a);
+}
+
+@function getColorByToken($tokenName, $paletteName: 'neutral') {
+  $color: transparent;
+  $data: map.get($colorTokens, $tokenName);
+  @if (type-of($data) == 'map') {
+    @if (map.has-key($data, 'bg')) and (map.has-key($data, 'fg')) {
+      $bg: map.get($data, 'bg');
+      $bgPaletteName: map.get($bg, 'palette');
+      $bgColorNumber: map.get($bg, 'number');
+      $bgOpacity: map.get($bg, 'opacity');
+      $bgColor: getColorFromPalettes($bgPaletteName, $bgColorNumber);
+      $fg: map.get($data, 'fg');
+      $fgPaletteName: map.get($fg, 'palette');
+      @if ($fgPaletteName == '') {
+        $fgPaletteName: $paletteName;
+      }
+      $fgColorNumber: map.get($fg, 'number');
+      $fgOpacity: map.get($fg, 'opacity');
+      $fgColor: getColorFromPalettes($fgPaletteName, $fgColorNumber);
+      $color: blendWithTransparent(
+        rgba($bgColor, $bgOpacity),
+        rgba($fgColor, $fgOpacity)
+      );
+    } @else {
+      @each $paletteNameInData, $colorNumber in $data {
+        $color: getColorFromPalettes($paletteNameInData, $colorNumber);
+      }
+    }
+  } @else {
+    $color: getColorFromPalettes($paletteName, $data);
+  }
+  @return $color;
+}
+
+@mixin getShadowPropertiesFromStyle($styleName) {
+  $prop-value: map.get($shadowStyles, $styleName);
+  @each $prop, $value in $prop-value {
+    #{$prop}: #{$value};
+  }
+}
+
+@mixin ge($value) {
+  @if (type-of($value) == 'number') {
+    @media (min-width: #{$value}) {
+      @content;
+    }
+  } @else if (type-of($value) == 'string') {
+    $bpMap: map.get($breakponts, $value);
+    $minWidth: map.get($bpMap, 'min-width');
+    @media (min-width: #{$minWidth}) {
+      @content;
+    }
+  }
+}
+
+@mixin le($value) {
+  @if (type-of($value) == 'number') {
+    @media (max-width: #{$value}) {
+      @content;
+    }
+  } @else if (type-of($value) == 'string') {
+    $bpMap: map.get($breakponts, $value);
+    $nextKey: map.get($bpMap, 'next-key');
+    $bpNextMap: map.get($breakponts, $nextKey);
+    $maxWidth: 9999rem;
+    @if ($nextKey != '') {
+      $maxWidth: map.get($bpNextMap, 'min-width') - 0.0625rem;
+    }
+    @media (max-width: #{$maxWidth}) {
+      @content;
+    }
+  }
+}
+
+@mixin eq($value) {
+  @if (type-of($value) == 'string') {
+    $bpMap: map.get($breakponts, $value);
+    $minWidth: map.get($bpMap, 'min-width');
+    $nextKey: map.get($bpMap, 'next-key');
+    $maxWidth: 9999rem;
+    @if ($nextKey != '') {
+      $bpNextMap: map.get($breakponts, $nextKey);
+      $maxWidth: map.get($bpNextMap, 'min-width') - 0.0625rem;
+      @media (min-width: #{$minWidth}) and (max-width: #{$maxWidth}) {
+        @content;
+      }
+    } @else {
+      @media (min-width: #{$minWidth}) {
+        @content;
+      }
+    }
+  }
+}
+
+@mixin between($valueA, $valueB) {
+  $minWidth: 0rem;
+  $maxWidth: 9999rem;
+  @if (type-of($valueA) == 'number') and (type-of($valueB) == 'number') {
+    $minWidth: math.min($valueA, $valueB);
+    $maxWidth: math.max($valueA, $valueB);
+  } @else if (type-of($valueA) == 'string') and (type-of($valueB) == 'string') {
+    $bpMapA: map.get($breakponts, $valueA);
+    $minWidthA: map.get($bpMapA, 'min-width');
+    $nextKeyA: map.get($bpMapA, 'next-key');
+    $maxWidthA: 9999rem;
+    @if ($nextKeyA != '') {
+      $bpNextMapA: map.get($breakponts, $nextKeyA);
+      $maxWidthA: map.get($bpNextMapA, 'min-width') - 0.0625rem;
+    }
+    $bpMapB: map.get($breakponts, $valueB);
+    $minWidthB: map.get($bpMapB, 'min-width');
+    $nextKeyB: map.get($bpMapB, 'next-key');
+    $maxWidthB: 9999rem;
+    @if ($nextKeyB != '') {
+      $bpNextMapB: map.get($breakponts, $nextKeyB);
+      $maxWidthB: map.get($bpNextMapB, 'min-width') - 0.0625rem;
+    }
+    $minWidth: math.min($minWidthA, $minWidthB);
+    $maxWidth: math.max($maxWidthA, $maxWidthB);
+  } @else if (type-of($valueA) == 'string') {
+    $bpMap: map.get($breakponts, $valueA);
+    $minWidth: map.get($bpMap, 'min-width');
+    $nextKey: map.get($bpMap, 'next-key');
+    $maxWidth: 9999rem;
+    @if ($nextKey != '') {
+      $bpNextMap: map.get($breakponts, $nextKey);
+      $maxWidth: map.get($bpNextMap, 'min-width') - 0.0625rem;
+    }
+    $minWidth: math.min($minWidth, $valueB);
+    $maxWidth: math.max($maxWidth, $valueB);
+  } @else if (type-of($valueB) == 'string') {
+    $bpMap: map.get($breakponts, $valueB);
+    $minWidth: map.get($bpMap, 'min-width');
+    $nextKey: map.get($bpMap, 'next-key');
+    $maxWidth: 9999rem;
+    @if ($nextKey != '') {
+      $bpNextMap: map.get($breakponts, $nextKey);
+      $maxWidth: map.get($bpNextMap, 'min-width') - 0.0625rem;
+    }
+    $minWidth: math.min($minWidth, $valueA);
+    $maxWidth: math.max($maxWidth, $valueA);
+  }
+  @media (min-width: #{$minWidth}) and (max-width: #{$maxWidth}) {
+    @content;
+  }
+}
+
+@mixin autolayout(
+  $isDirX: true,
+  $alignX: 'l',
+  $alignY: 't',
+  $gap: 0rem,
+  $isPacked: true,
+  $isAlignBaseline: false
+) {
+  display: flex;
+  @if ($isDirX) {
+    flex-direction: row;
+  } @else {
+    flex-direction: column;
+  }
+  flex-wrap: nowrap;
+  gap: $gap;
+  $alignXProp: flex-start;
+  @if ($alignX == 'c') {
+    $alignXProp: center;
+  } @else if ($alignX == 'r') {
+    $alignXProp: flex-end;
+  }
+  $alignYProp: flex-start;
+  @if ($alignY == 'c') {
+    $alignYProp: center;
+  } @else if ($alignY == 'b') {
+    $alignYProp: flex-end;
+  }
+  @if ($isAlignBaseline) {
+    $isDirX: true;
+  }
+  @if ($isDirX) {
+    @if ($isAlignBaseline) {
+      align-items: baseline;
+    } @else {
+      align-items: $alignYProp;
+    }
+    @if ($isPacked) {
+      justify-content: $alignXProp;
+    } @else {
+      justify-content: space-between;
+    }
+  } @else {
+    align-items: $alignXProp;
+    @if ($isPacked) {
+      justify-content: $alignYProp;
+    } @else {
+      justify-content: space-between;
+    }
+  }
+}
+
+@mixin al(
+  $isDirX: true,
+  $align: 1,
+  $gap: 0rem,
+  $isPacked: true,
+  $isAlignBaseline: false
+) {
+  $alignX: 'l';
+  $alignY: 't';
+  @if ($align == 2) {
+    $alignX: 'c';
+  } @else if($align == 3) {
+    $alignX: 'r';
+  } @else if($align == 4) {
+    $alignY: 'c';
+  } @else if($align == 5) {
+    $alignX: 'c';
+    $alignY: 'c';
+  } @else if($align == 6) {
+    $alignX: 'r';
+    $alignY: 'c';
+  } @else if($align == 7) {
+    $alignY: 'b';
+  } @else if($align == 8) {
+    $alignX: 'c';
+    $alignY: 'b';
+  } @else if($align == 9) {
+    $alignX: 'r';
+    $alignY: 'b';
+  }
+  @include autolayout(
+    $isDirX,
+    $alignX,
+    $alignY,
+    $gap,
+    $isPacked,
+    $isAlignBaseline
+  );
+}
